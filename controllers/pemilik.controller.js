@@ -2,6 +2,14 @@ const pool = require('../config/db.config');
 
 exports.createPemilik = async (req, res) => {
     const { Nama, NoHP, Email } = req.body;
+
+    // Validasi Email harus @gmail.com
+    if (Email && !Email.endsWith('@gmail.com')) {
+        return res.status(400).json({
+            message: "Email harus menggunakan domain @gmail.com"
+        });
+    }
+
     try {
         const [result] = await pool.execute(
             `INSERT INTO PemilikHewan (Nama, NoHP, Email) VALUES (?, ?, ?)`,
@@ -39,6 +47,14 @@ exports.getPemilikById = async (req, res) => {
 exports.updatePemilik = async (req, res) => {
     const { id } = req.params;
     const { Nama, NoHP, Email } = req.body;
+
+    // Validasi Email harus @gmail.com
+    if (Email && !Email.endsWith('@gmail.com')) {
+        return res.status(400).json({
+            message: "Email harus menggunakan domain @gmail.com"
+        });
+    }
+
     await pool.execute(
         `UPDATE PemilikHewan SET Nama=?, NoHP=?, Email=? WHERE IDPemilik=?`,
         [Nama, NoHP, Email, id]

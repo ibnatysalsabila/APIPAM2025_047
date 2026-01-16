@@ -1,97 +1,55 @@
 const pool = require('../config/db.config');
 
-// CREATE
-exports.createPemeriksaan = async (req, res) => {
-    try {
-        const {
-            IDHewan,
-            IDLayanan,
-            TanggalPemeriksaan,
-            CatatanPemeriksaan
-        } = req.body;
-
-        // Validasi input
-        if (!IDHewan || !IDLayanan || !TanggalPemeriksaan || !CatatanPemeriksaan) {
-            return res.status(400).json({
-                message: "IDHewan, IDLayanan, TanggalPemeriksaan, dan CatatanPemeriksaan wajib diisi"
-            });
-        }
-
-        const [result] = await pool.execute(
-            `INSERT INTO RiwayatPemeriksaan
-             (IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan)
-             VALUES (?, ?, ?, ?)`,
-            [IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan]
-        );
-
-        res.status(201).json({
-            message: "Riwayat pemeriksaan berhasil ditambahkan",
-            IDRiwayat: result.insertId
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Gagal menambah riwayat pemeriksaan",
-            error: error.message
-        });
-    }
-};
-
-// READ ALL
 exports.getAllPemeriksaan = async (req, res) => {
     try {
         const [rows] = await pool.execute(`
-            SELECT r.*, h.NamaHewan, l.NamaLayanan
-            FROM RiwayatPemeriksaan r
-            JOIN Hewan h ON r.IDHewan = h.IDHewan
-            LEFT JOIN LayananMedis l ON r.IDLayanan = l.IDLayanan
+            SELECT p.*, h.NamaHewan, l.NamaLayanan 
+            FROM riwayatpemeriksaan p
+            LEFT JOIN hewan h ON p.IDHewan = h.IDHewan
+            LEFT JOIN layananmedis l ON p.IDLayanan = l.IDLayanan
         `);
+        // Format tanggal jika perlu, tapi biarkan raw date dulu
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ message: "Gagal mengambil data pemeriksaan" });
+        res.status(500).json({ message: error.message });
     }
 };
 
-// READ BY ID
-exports.getPemeriksaanById = async (req, res) => {
-    const { id } = req.params;
-    const [rows] = await pool.execute(
-        `SELECT * FROM RiwayatPemeriksaan WHERE IDRiwayat=?`,
-        [id]
-    );
-
-    rows.length
-        ? res.json(rows[0])
-        : res.status(404).json({ message: "Riwayat tidak ditemukan" });
+exports.createPemeriksaan = async (req, res) => {
+    const { IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan } = req.body;
+    try {
+        await pool.execute(
+            'INSERT INTO riwayatpemeriksaan (IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan) VALUES (?, ?, ?, ?)',
+            [IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan]
+        );
+        res.status(201).json({ message: "Pemeriksaan berhasil ditambahkan" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
-// UPDATE
 exports.updatePemeriksaan = async (req, res) => {
     const { id } = req.params;
-    const { IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan } = req.body;
-
-    // Validasi input
-    if (!IDLayanan || !TanggalPemeriksaan || !CatatanPemeriksaan) {
-        return res.status(400).json({
-            message: "IDLayanan, TanggalPemeriksaan, dan CatatanPemeriksaan wajib diisi"
-        });
+    const { IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan } = req.body;
+    console.log(`[DEBUG] Update Pemeriksaan - ID: ${id}`, req.body);
+    try {
+        await pool.execute(
+            'UPDATE riwayatpemeriksaan SET IDHewan=?, IDLayanan=?, TanggalPemeriksaan=?, CatatanPemeriksaan=? WHERE IDRiwayat=?',
+            [IDHewan, IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan, id]
+        );
+        res.json({ message: "Pemeriksaan berhasil diperbarui" });
+    } catch (error) {
+        console.error(`[ERROR] Update Pemeriksaan Failed:`, error);
+        res.status(500).json({ message: error.message });
     }
-
-    await pool.execute(
-        `UPDATE RiwayatPemeriksaan
-         SET IDLayanan=?, TanggalPemeriksaan=?, CatatanPemeriksaan=?
-         WHERE IDRiwayat=?`,
-        [IDLayanan, TanggalPemeriksaan, CatatanPemeriksaan, id]
-    );
-
-    res.json({ message: "Riwayat pemeriksaan berhasil diperbarui" });
 };
 
-// DELETE
 exports.deletePemeriksaan = async (req, res) => {
     const { id } = req.params;
-    await pool.execute(
-        `DELETE FROM RiwayatPemeriksaan WHERE IDRiwayat=?`,
-        [id]
-    );
-    res.json({ message: "Riwayat pemeriksaan berhasil dihapus" });
+    try {
+        await pool.execute('DELETE FROM riwayatpemeriksaan WHERE IDRiwayat=?', [id]);
+        res.json({ message: "Pemeriksaan berhasil dihapus" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };

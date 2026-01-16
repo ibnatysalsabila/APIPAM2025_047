@@ -41,18 +41,18 @@ exports.getHewanById = async (req, res) => {
 
 exports.updateHewan = async (req, res) => {
     const { id } = req.params;
-    const { NamaHewan, Jenis } = req.body;
+    const { NamaHewan, Jenis, IDPemilik } = req.body;
 
     // Validasi input
-    if (!NamaHewan || !Jenis) {
+    if (!NamaHewan || !Jenis || !IDPemilik) {
         return res.status(400).json({
-            message: "NamaHewan dan Jenis wajib diisi"
+            message: "NamaHewan, Jenis, dan IDPemilik wajib diisi"
         });
     }
 
     await pool.execute(
-        `UPDATE Hewan SET NamaHewan=?, Jenis=? WHERE IDHewan=?`,
-        [NamaHewan, Jenis, id]
+        `UPDATE Hewan SET NamaHewan=?, Jenis=?, IDPemilik=? WHERE IDHewan=?`,
+        [NamaHewan, Jenis, IDPemilik, id]
     );
     res.json({ message: "Hewan berhasil diperbarui" });
 };
